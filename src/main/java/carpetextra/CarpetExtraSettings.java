@@ -53,6 +53,9 @@ public class CarpetExtraSettings
     @Rule(desc="Dispensers can place blocks", category = {CREATIVE, EXTRA, DISPENSER})
     public static boolean dispenserPlacesBlocks = false;
 
+    @Rule(desc="Dispensers can break blocks", category = {SURVIVAL, EXTRA, DISPENSER})
+    public static boolean dispenserBreaksBlocks = false;
+
     @Rule(
             desc = "variable delays on wooden components",
             extra = "buttons, pressure plates",

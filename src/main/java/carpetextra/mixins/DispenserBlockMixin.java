@@ -66,5 +66,8 @@ public abstract class DispenserBlockMixin
         
         if (CarpetExtraSettings.dragonsBreathConvertsCobbleToEndstone && item == Items.DRAGON_BREATH)
             cir.setReturnValue(new DragonsBreathDispenserBehaviour());
+
+        if(CarpetExtraSettings.dispenserBreaksBlocks && item instanceof MiningToolItem)
+            cir.setReturnValue(new BreakBlockDispenserBehavior());
     }
 }

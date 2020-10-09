@@ -1,8 +1,13 @@
 package carpetextra.helpers;
 
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import com.google.common.collect.Sets;
+
 import carpetextra.CarpetExtraSettings;
 import carpetextra.utils.PlaceBlockDispenserBehavior;
-import com.google.common.collect.Sets;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -19,6 +24,7 @@ import net.minecraft.entity.vehicle.MinecartEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.MiningToolItem;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -30,11 +36,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
-
-import java.util.List;
-import java.util.Set;
 
 public class CarpetDispenserBehaviours
 {
@@ -270,6 +272,82 @@ public class CarpetDispenserBehaviours
                 return stack;
             }
             return super.dispenseSilently(source, stack);
+        }
+    }
+
+    public static class BreakBlockDispenserBehavior extends ItemDispenserBehavior {
+        private static BreakBlockDispenserBehavior instance = new BreakBlockDispenserBehavior();
+        public static BreakBlockDispenserBehavior getInstance() {
+            return instance;
+        }
+        private static Random random = new Random();
+        
+    
+        @Override
+        public ItemStack dispenseSilently(BlockPointer blockPointer, ItemStack itemStack) {
+            Item item = itemStack.getItem();
+    
+            if (!CarpetExtraSettings.dispenserBreaksBlocks)
+                return super.dispenseSilently(blockPointer, itemStack);
+            
+            MiningToolItem toolItem;
+            if(itemStack.getItem() instanceof MiningToolItem)
+                toolItem = (MiningToolItem)item;
+            else
+                return itemStack;
+
+            World world = blockPointer.getWorld();
+            Direction direction = blockPointer.getBlockState().get(DispenserBlock.FACING);
+            BlockPos pos = blockPointer.getBlockPos().offset(direction);
+            BlockState state = world.getBlockState(pos);
+
+            float currentHardness = state.getHardness(world, pos);
+            if(!state.isAir() && currentHardness >= 0)
+            {
+                if(currentHardness == 0)
+                {
+                    world.breakBlock(pos, true);
+                }
+                 else if (currentHardness > 0 && toolItem.isEffectiveOn(state));
+                {
+                    if(itemStack.isDamageable())
+                    {
+                        itemStack.damage(1, random, null);
+                        if(itemStack.getDamage()>itemStack.getMaxDamage())
+                            ((ItemStack)itemStack).decrement(1);
+                    }
+                    if(toolItem.isEffectiveOn(state)){
+                        if(probableBoolean(currentHardness, toolItem.getMaterial().getMiningSpeedMultiplier()))
+                            world.breakBlock(pos, true);
+                    }
+                    else
+                    {
+                        if(probableBoolean(currentHardness*2, 0.5f))
+                            world.breakBlock(pos, true);
+                    }
+                }
+            }
+
+            return itemStack;
+        }
+
+        public static boolean probableBoolean(float currentHardness, float multiplier) {
+            float probability = (50*multiplier)/currentHardness;
+            if(probability>100)
+                probability = 100;
+            return Math.random()*100 <= probability;
+        }
+
+        public static void mineBlock(BlockState state, float currentHardness){
+
+        }
+    
+        public static boolean canBreak() {
+            if (CarpetExtraSettings.dispenserPlacesBlocks) {
+                // extra exceptions
+                return true;
+            }
+            return false;
         }
     }
 }
